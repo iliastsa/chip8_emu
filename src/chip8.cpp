@@ -20,6 +20,8 @@ void chip8::initialize(){
 
     for(int i = 0; i < 64 * 32; ++i)
         gfx[i] = 0;
+
+    drawFlag = false;
     
     delay_timer = 0;
     sound_timer = 0;
@@ -82,6 +84,11 @@ void chip8::emulateCycle(){
             switch(opcode & 0x0FFF){
                 // Clear screen
                 case 0x00E0:
+                    for(int i = 0; i < 64 * 32; ++i)
+                        gfx[i] = 0;
+
+                    drawFlag = true;
+
                     PC +=2;
 
                     break;
@@ -98,6 +105,7 @@ void chip8::emulateCycle(){
                 default:
                     cerr << "Unknown opcode " << opcode << " at " << PC << endl;
             }
+
             break;
 
         // Jump to address 0x0NNN
@@ -309,18 +317,183 @@ void chip8::emulateCycle(){
 
             break;
 
-        // Draw
+        // Draw sprite 8xN at memory address I at postion (VX, VY) (0xDXYN)
         case 0xD000:
-            for(int i = 0; i < (opcode & 0x000F); ++i){
-                char pixel_row = memory[I];
-                for(int j = 0; j < 8; ++j){
+            {
+                // Coordinates
+                unsigned char x = V[(opcode & 0x0F00) >> 8];
+                unsigned char y = V[(opcode & 0x00F0) >> 4];
 
+                V[0xF] = 0;
+
+                // Loop through the pixels
+                for(int i = 0; i < (opcode & 0x000F); ++i){
+                    unsigned char pixel_row = memory[I + i];
+                    unsigned char mask = 0x80;
+
+                    for(int j = 0; j < 8; ++j){
+                        if((pixel_row & mask) != 0){
+                            if(gfx[(x + j) + (y + i) * 64] == 1)
+                                V[0xF] = 1;
+
+                            gfx[(x + j) + (y + i) * 64] ^= 1;
+                        }
+                        mask >>= 1;
+                    }
                 }
+
+                drawFlag = true;
+
+                PC += 2;
             }
+
+            break;
+
+        case 0xE000:
+            switch(opcode & 0x00FF){
+                // Skip next instruction if key stored in VX is pressed (0xEX9E)
+                case 0x009E:
+                    if(key[V[(opcode & 0x0F00) >> 8]] != 0)
+                        PC += 2;
+
+                    PC += 2;
+
+                    break;
+
+                // Skip next instruction if key stored in VX is not pressed (0xEXA1)
+                case 0x00A1:
+                    if(key[V[(opcode & 0x0F00) >> 8]] == 0)
+                        PC += 2;
+
+                    PC += 2;
+
+                    break;
+
+                default:
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+            }
+
+            break;
+
+        case 0xF000:
+            switch(opcode & 0x00FF){
+                // Set VX register to the delay timer value
+                case 0x0007:
+                    V[(opcode & 0x0F00) >> 8] = delay_timer;
+
+                    PC += 2;
+
+                    break;
+
+                // Wait for key press, and store it in VX
+                case 0x000A:
+                    {
+                        bool key_pressed = false;
+                        for(int i = 0; i < 16; ++i){
+                            if(key[i] != 0){
+                                V[(opcode & 0x0F00) >> 8] = i;
+                                key_pressed = true;
+                            }
+                        }
+
+                        if(!key_pressed)
+                            return;
+
+                        PC += 2;
+                    }
+                    break;
+
+                // Set delay timer to VX
+                case 0x0015:
+                    delay_timer = V[(opcode & 0x0F00) >> 8];
+
+                    PC += 2;
+
+                    break;
+
+                // Set delay timer to VX
+                case 0x0018:
+                    sound_timer = V[(opcode & 0x0F00) >> 8];
+
+                    PC += 2;
+
+                    break;
+
+                // Add VX to I
+                case 0x001E:
+                    I += V[(opcode & 0x0F00) >> 8];
+
+                    PC += 2;
+
+                    break;
+
+                // Store location of VX character in I
+                case 0x0029:
+                    I = fontset[V[(opcode & 0x0F00) >> 8] * 5];
+
+                    PC += 2;
+
+                    break;
+
+                // Store BCD representation in I, I+1 and I+2
+                case 0x0033:
+                    memory[I]     = V[(opcode & 0x0F00) >> 8] / 100;
+                    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] % 100) / 10;
+                    memory[I + 2] = V[(opcode & 0x0F00) >> 8] % 10;
+
+                    PC += 2;
+                    
+                    break;
+
+                // Store V0-VX in memory starting at I, incrementing I for each value stored
+                case 0x0055:
+                    for(int i = 0; i < ((opcode & 0x0F00) >> 8); ++i)
+                        memory[I++] = V[i];
+
+                    PC += 2;
+
+                    break;
+
+                // Load V0-VX from memory starting at I, incrementing I for each value stored
+                case 0x0065:
+                    for(int i = 0; i < ((opcode & 0x0F00) >> 8); ++i)
+                        V[i] = memory[I++];
+
+                    PC += 2;
+
+                    break;
+
+                default:
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+            }
+
+            break;
 
         // Unknown opcode
         default:
             cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+    }
+
+    if(delay_timer > 0)
+        --delay_timer;
+
+    if(sound_timer > 0){
+        if(sound_timer == 1){
+            //BEEP
+        }
+        --sound_timer;
+    }
+}
+
+void chip8::run(){
+    for(;;){
+        drawFlag = false;
+
+        emulateCycle();
+
+        // TODO: Draw graphics if drawFlag
+        
+        // TODO: Store pressed keys
     }
 }
 
