@@ -82,7 +82,7 @@ void chip8::emulateCycle(){
             switch(opcode & 0x0FFF){
                 // Clear screen
                 case 0x00E0:
-                    PC++;
+                    PC +=2;
 
                     break;
 
@@ -94,9 +94,9 @@ void chip8::emulateCycle(){
 
                     break;
 
-                // Call programm at address NNN
+                // Call programm at address NNN (not needed)
                 default:
-                    break;
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
             }
             break;
 
@@ -121,12 +121,202 @@ void chip8::emulateCycle(){
 
         // Skip next instruction if VX == NN (0x3XNN)
         case 0x3000:
-            if(V[opcode & 0x0F00 >> 8] == (opcode & 0x00FF))
-                PC++;
+            if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+                PC +=2;
 
-            PC++;
+            PC +=2;
 
             break;
+        
+        // Skip next instruction if VX != NN (0x4XNN)
+        case 0x4000:
+            if(V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+                PC +=2;
+
+            PC +=2;
+
+            break;
+
+        // Skip next instruction if VX == VY (0x5XY0)
+        case 0x5000:
+            switch(opcode & 0x000F){
+                case 0x0000:
+                    if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4])
+                        PC +=2;
+
+                    PC +=2;
+
+                    break;
+
+                default:
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+            }
+            
+            break;
+
+        // Const assignment VX = NN (0x6XNN)
+        case 0x6000:
+            V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+
+            PC +=2;
+
+            break;
+
+        // Const increment VX = NN (0x6XNN)
+        case 0x7000:
+            V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+
+            PC +=2;
+
+            break;
+
+        // Various ALU ops
+        case 0x8000:
+            switch((opcode & 0x000F)){
+                // Assignment VX = VY (0x8XY0)
+                case 0x0000:
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Bitwise OR VX = VX | VY
+                case 0x0001:
+                    V[(opcode & 0x0F00) >> 8] |= V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Bitwise AND VX = VX & VY
+                case 0x0002:
+                    V[(opcode & 0x0F00) >> 8] &= V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Bitwise XOR VX = VX ^ VY
+                case 0x0003:
+                    V[(opcode & 0x0F00) >> 8] ^= V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Addition VX = VX + VY
+                case 0x0004:
+                    if(V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+
+                    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Subtraction VX = VX - VY
+                case 0x0005:
+                    if(V[(opcode & 0x00F0) >> 4] < V[(opcode & 0x0F00) >> 8])
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+
+                    V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
+
+                    PC += 2;
+
+                    break;
+
+                // Shift VY and assign to VX, set VF to the LSB before of VY before the shift
+                case 0x0006:
+                    V[0xF] = V[(opcode & 0x00F0) >> 4] & 0x01;
+
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] >>= 1; 
+
+                    PC += 2;
+
+                    break;
+
+                // Subtraction VX = VY - VX
+                case 0x0007:
+                    if(V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8])
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
+
+                    PC += 2;
+
+                    break;
+
+                // Shift VY and assign to VX, set VF to the MSB before of VY before the shift
+                case 0x0008:
+                    V[0xF] = (V[(opcode & 0x00F0) >> 4] & 0x80) >> 7;
+
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] <<= 1; 
+
+                    PC += 2;
+
+                    break;
+
+                default:
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+            }
+
+            break;
+
+        case 0x9000:
+            switch(opcode & 0x000F){
+                // Skip the next instruction if VX != VY (0x9XY0)
+                case 0x0:
+                    if(V[(opcode & 0x0F00) >> 8] != V[(opcode & 0x00F0) >> 4])
+                        PC += 2;
+
+                    PC += 2;
+                    
+                    break;
+
+                default:
+                    cerr << "Unknown opcode " << opcode << " at " << PC << endl;
+            }
+
+            break;
+
+        // Set I to address NNN (0xANNN)
+        case 0xA000:
+            I = opcode & 0x0FFF;
+            
+            PC += 2;
+
+            break;
+
+        // Set PC to V0 + NNN (0xBNNN)
+        case 0xB000:
+            PC = V[0] + (opcode & 0x0FFF);
+
+            break;
+
+        // Set VX to rand()%NN (0xCXNN), rand() in [0, 255]
+        case 0xC000:
+            V[(opcode & 0x0F00) >> 8] = (((unsigned char)rand()) % 256) & (opcode & 0x00FF);
+
+            PC += 2;
+
+            break;
+
+        // Draw
+        case 0xD000:
+            for(int i = 0; i < (opcode & 0x000F); ++i){
+                char pixel_row = memory[I];
+                for(int j = 0; j < 8; ++j){
+
+                }
+            }
 
         // Unknown opcode
         default:
