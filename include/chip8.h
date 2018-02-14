@@ -27,6 +27,9 @@ class chip8{
 
         // Graphics; 64 x 32 b/w screen
         unsigned char gfx[64 * 32];
+        
+        // Simple flag for drawing
+        bool drawFlag;
 
         // Timers
         unsigned char delay_timer;
@@ -64,7 +67,7 @@ class chip8{
         void emulateCycle();
 
     public:
-        char run();
+        void run();
 };
 
 #endif
