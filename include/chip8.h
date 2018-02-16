@@ -1,6 +1,8 @@
 #ifndef CHIP8_H
 #define CHIP8_H
 
+#include <SDL.h>
+
 /*
  * Memory map:
  *
@@ -62,11 +64,26 @@ class chip8{
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F        
         };
 
-        void initialize();
-        char loadGame(char *filename);
+        // SDL stuff
+        SDL_Renderer *renderer;
+        SDL_Window *window;
+        bool running;
+
+        // Used as CPU core
         void emulateCycle();
+        
+        // Used for drawing
+        void drawScreen();
+
+        // Used for I/O
+        void storeKeys();
 
     public:
+        chip8();
+        ~chip8();
+
+        void initialize();
+        char loadGame(char *filename);
         void run();
 };
 
