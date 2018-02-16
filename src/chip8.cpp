@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <SDL.h>
-#include "../include/chip8.h"
+#include "chip8.h"
 
 using namespace std;
 
@@ -12,6 +12,7 @@ chip8::chip8() : running(true){
     SDL_CreateWindowAndRenderer(640, 320, 0, &window, &renderer);
 
     SDL_RenderSetLogicalSize(renderer, 64, 32);
+    SDL_SetWindowTitle(window, "CHIP-8");
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
