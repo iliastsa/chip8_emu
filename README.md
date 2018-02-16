@@ -18,9 +18,9 @@ CHIP-8 uses a hexadecimal keypad, which is mapped as follows (notation: [keypad]
 
 | 1 => 1 | 2 => 2 | 3 => 3 | C => 4 |
 |--------|--------|--------|--------|
-| 4 => Q | 5 => W | 6 => E | D => R |
-| 7 => A | 8 => S | 9 => D | E => F |
-| A => Z | 0 => X | B => C | F => V |
+| **4 => Q** | **5 => W** | **6 => E** | **D => R** |
+| **7 => A** | **8 => S** | **9 => D** | **E => F** |
+| **A => Z** | **0 => X** | **B => C** | **F => V** |
 
 # Licence
 The source code of this project is licensed under the [MIT License](https://opensource.org/licenses/mit-license.php) 
