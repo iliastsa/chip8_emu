@@ -50,6 +50,8 @@ void chip8::initialize(){
     // Finally load font set into memory
     for(int i = 0; i < 80; ++i)
         memory[i] = fontset[i];
+
+    srand(time(NULL));
 }
 
 streampos fileSize(const char *filename){
@@ -280,9 +282,9 @@ void chip8::emulateCycle(){
 
                     // Shift VY and assign to VX, set VF to the LSB before of VY before the shift
                 case 0x0006:
-                    V[0xF] = V[(opcode & 0x00F0) >> 4] & 0x01;
+                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x01;
 
-                    V[(opcode & 0x0F00) >> 8] = (V[(opcode & 0x00F0) >> 4] >>= 1); 
+                    V[(opcode & 0x0F00) >> 8] >>= 1; 
 
                     PC += 2;
 
@@ -303,9 +305,9 @@ void chip8::emulateCycle(){
 
                     // Shift VY and assign to VX, set VF to the MSB before of VY before the shift
                 case 0x000E:
-                    V[0xF] = (V[(opcode & 0x00F0) >> 4] & 0x80) >> 7;
+                    V[0xF] = V[(opcode & 0x0F00) >> 8] >> 7;
 
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] <<= 1; 
+                    V[(opcode & 0x0F00) >> 8] <<= 1; 
 
                     PC += 2;
 
@@ -578,7 +580,7 @@ void chip8::storeKeys(){
 
 void chip8::run(){
     for(;;){
-        usleep(500);
+        usleep(1000);
         drawFlag = false;
 
         emulateCycle();
