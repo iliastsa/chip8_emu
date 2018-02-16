@@ -68,7 +68,7 @@ streampos fileSize(const char *filename){
     return fsize;
 }
 
-char chip8::loadGame(char *filename){
+char chip8::loadGame(const char *filename){
     cout << "Loading file: " << filename << endl;
 		
 	// Open file

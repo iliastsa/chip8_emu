@@ -83,7 +83,7 @@ class chip8{
         ~chip8();
 
         void initialize();
-        char loadGame(char *filename);
+        char loadGame(const char *filename);
         void run();
 };
 
