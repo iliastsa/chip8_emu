@@ -10,9 +10,9 @@ make
 
 # Usage
 After building the project, to execute run:
-''' shell
+``` shell
 ./chip8_emu <input_binary>
-'''
+```
 
 CHIP-8 uses a hexadecimal keypad, which is mapped as follows (notation: [keypad] => [keyboard]):
 
