@@ -1,3 +1,5 @@
+![alt text](https://github.com/iliastsa/chip8_emu/blob/master/project_header.png "CHIP-8")
+
 # Build
 This project is built using CMake and the only dependency it has is SDL2.
 
